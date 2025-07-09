@@ -8,6 +8,7 @@ import { Trash2, Recycle, Leaf } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
+  console.log("Login component is rendering");
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
