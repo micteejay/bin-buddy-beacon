@@ -6,32 +6,32 @@ import { Badge } from "@/components/ui/badge";
 import WasteBin from "@/components/WasteBin";
 import { LogOut, Wifi, WifiOff, RefreshCw, Trash2, BarChart3, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useWasteBins } from "@/hooks/useWasteBins";
 
 const Dashboard = () => {
-  const [bins, setBins] = useState([
-    { id: "001", level: 45, location: "Main Building - Floor 1", lastUpdate: new Date() },
-    { id: "002", level: 78, location: "Cafeteria - Main Hall", lastUpdate: new Date() }
-  ]);
+  const { bins: wasteBins, loading, error, refetch } = useWasteBins();
   const [isConnected, setIsConnected] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Simulate ESP8266 data updates for multiple bins
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isConnected) {
-        setBins(prevBins => 
-          prevBins.map(bin => ({
-            ...bin,
-            level: Math.max(0, Math.min(100, bin.level + (Math.random() - 0.5) * 10)),
-            lastUpdate: new Date()
-          }))
-        );
-      }
-    }, 5000);
+  // Transform Supabase data to match existing interface
+  const bins = wasteBins.map(bin => ({
+    id: bin.bin_id,
+    level: bin.level,
+    location: bin.location,
+    lastUpdate: new Date(bin.updated_at)
+  }));
 
-    return () => clearInterval(interval);
-  }, [isConnected]);
+  // Check for errors in loading
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading bin data",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   // Simulate connection status
   useEffect(() => {
@@ -67,13 +67,8 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handleRefresh = () => {
-    setBins(prevBins => 
-      prevBins.map(bin => ({
-        ...bin,
-        lastUpdate: new Date()
-      }))
-    );
+  const handleRefresh = async () => {
+    await refetch();
     toast({
       title: "Data refreshed",
       description: "Bin data has been updated",
@@ -274,10 +269,10 @@ const Dashboard = () => {
             <div className="text-center space-y-2">
               <h3 className="font-semibold text-foreground">ESP8266 Integration</h3>
               <p className="text-sm text-muted-foreground">
-                Currently showing simulated data. To connect your ESP8266 sensor, you'll need to set up a backend API to receive real sensor data.
+                ESP8266 API Endpoint: <code className="text-primary">/functions/v1/esp8266-data</code>
               </p>
               <p className="text-xs text-muted-foreground">
-                For production use, integrate with your IoT platform or set up a REST API endpoint.
+                Send POST requests with: {"{ bin_id, level, location }"}
               </p>
             </div>
           </CardContent>

@@ -14,7 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      waste_bins: {
+        Row: {
+          bin_id: string
+          created_at: string
+          id: string
+          level: number
+          location: string
+          updated_at: string
+        }
+        Insert: {
+          bin_id: string
+          created_at?: string
+          id?: string
+          level: number
+          location: string
+          updated_at?: string
+        }
+        Update: {
+          bin_id?: string
+          created_at?: string
+          id?: string
+          level?: number
+          location?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
