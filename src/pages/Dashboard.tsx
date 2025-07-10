@@ -7,6 +7,7 @@ import WasteBin from "@/components/WasteBin";
 import { LogOut, Wifi, WifiOff, RefreshCw, Trash2, BarChart3, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useWasteBins } from "@/hooks/useWasteBins";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const { bins: wasteBins, loading, error, refetch } = useWasteBins();
@@ -58,13 +59,21 @@ const Dashboard = () => {
     return () => clearInterval(connectionInterval);
   }, [toast]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      navigate("/auth");
+    } catch (error) {
+      toast({
+        title: "Logout Error",
+        description: "There was an error logging out",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRefresh = async () => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,21 +6,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2, User, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    checkUser();
+  }, [navigate]);
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please enter both username and password",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -28,25 +41,50 @@ const Auth = () => {
 
     setIsLoading(true);
     
-    // Simulate authentication delay
-    setTimeout(() => {
-      // Simple auth check (you can replace with real authentication)
-      if (username === "admin" && password === "password") {
-        localStorage.setItem("isAuthenticated", "true");
-        toast({
-          title: "Login Successful",
-          description: "Welcome to WasteWatch Dashboard",
+    try {
+      let result;
+      if (isSignUp) {
+        result = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`
+          }
         });
-        navigate("/dashboard");
       } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid username or password",
-          variant: "destructive",
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
       }
+
+      if (result.error) {
+        toast({
+          title: isSignUp ? "Sign Up Failed" : "Login Failed",
+          description: result.error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: isSignUp ? "Account Created" : "Login Successful",
+          description: isSignUp 
+            ? "Please check your email to verify your account" 
+            : "Welcome to WasteWatch Dashboard",
+        });
+        
+        if (!isSignUp && result.data.user) {
+          navigate("/dashboard");
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -63,19 +101,19 @@ const Auth = () => {
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleAuth} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium">
-                Username
+              <Label htmlFor="email" className="text-sm font-medium">
+                Email
               </Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   disabled={isLoading}
                 />
@@ -105,16 +143,25 @@ const Auth = () => {
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading 
+                ? (isSignUp ? "Creating account..." : "Signing in...") 
+                : (isSignUp ? "Sign Up" : "Sign In")
+              }
             </Button>
           </form>
           
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <p className="text-xs text-muted-foreground text-center">
-              Demo credentials:<br />
-              Username: <strong>admin</strong><br />
-              Password: <strong>password</strong>
-            </p>
+          <div className="mt-4 text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSignUp(!isSignUp)}
+              disabled={isLoading}
+            >
+              {isSignUp 
+                ? "Already have an account? Sign in" 
+                : "Need an account? Sign up"
+              }
+            </Button>
           </div>
         </CardContent>
       </Card>
