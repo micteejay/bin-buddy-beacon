@@ -19,34 +19,44 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     if (req.method === 'POST') {
-      // Handle ESP8266 data submission
+      // Handle ESP8266 data submission (supports both single bin and batch)
       const body = await req.json()
       console.log('Received ESP8266 data:', body)
 
-      // Validate required fields
-      if (!body.bin_id || typeof body.level !== 'number' || !body.location) {
-        return new Response(
-          JSON.stringify({ error: 'Missing required fields: bin_id, level, location' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+      // Support both single bin and batch processing
+      const bins = Array.isArray(body) ? body : [body];
+      const insertData = [];
+      
+      // Validate each bin's data
+      for (const binData of bins) {
+        const { bin_id, level, location } = binData;
+        
+        if (!bin_id || typeof level !== 'number' || !location) {
+          return new Response(
+            JSON.stringify({ error: 'Missing required fields: bin_id, level, location' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Validate level range
+        if (level < 0 || level > 100) {
+          return new Response(
+            JSON.stringify({ error: `Level must be between 0 and 100 for bin ${bin_id}` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        insertData.push({
+          bin_id,
+          level: Math.round(level),
+          location
+        });
       }
 
-      // Validate level range
-      if (body.level < 0 || body.level > 100) {
-        return new Response(
-          JSON.stringify({ error: 'Level must be between 0 and 100' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Insert data into waste_bins table
+      // Insert all bin data into waste_bins table
       const { data, error } = await supabase
         .from('waste_bins')
-        .insert({
-          bin_id: body.bin_id,
-          level: Math.round(body.level),
-          location: body.location
-        })
+        .insert(insertData)
         .select()
 
       if (error) {
@@ -59,7 +69,12 @@ serve(async (req) => {
 
       console.log('Data inserted successfully:', data)
       return new Response(
-        JSON.stringify({ success: true, data }),
+        JSON.stringify({ 
+          success: true, 
+          data,
+          bins_processed: bins.length,
+          message: `Successfully updated ${bins.length} bin(s)`
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
