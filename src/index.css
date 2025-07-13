@@ -120,3 +120,60 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Background Gradients */
+  .bg-gradient-bg {
+    background: var(--gradient-bg);
+  }
+  
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-eco {
+    background: var(--gradient-eco);
+  }
+
+  /* Shadow utilities */
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .shadow-strong {
+    box-shadow: var(--shadow-strong);
+  }
+
+  /* Waste bin animations */
+  @keyframes fill-up {
+    from {
+      height: 0%;
+    }
+    to {
+      height: var(--fill-height);
+    }
+  }
+
+  @keyframes pulse-eco {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+  }
+
+  .animate-pulse-eco {
+    animation: pulse-eco 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .duration-2000 {
+    transition-duration: 2000ms;
+  }
+}
