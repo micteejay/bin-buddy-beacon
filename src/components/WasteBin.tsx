@@ -61,7 +61,6 @@ const WasteBin = ({ level, binId, location, lastUpdated = new Date() }: WasteBin
             {getStatusText()}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">{location}</p>
       </CardHeader>
 
       <CardContent className="space-y-6">
