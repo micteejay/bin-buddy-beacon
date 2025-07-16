@@ -78,8 +78,7 @@ const WasteBin = ({ level, binId, location, lastUpdated = new Date() }: WasteBin
                     getBinFillColor()
                   )}
                   style={{ 
-                    height: `${animatedLevel}%`,
-                    animation: level > 0 ? 'fill-up 2s ease-out' : 'none'
+                    height: `${animatedLevel}%`
                   }}
                 />
               </div>

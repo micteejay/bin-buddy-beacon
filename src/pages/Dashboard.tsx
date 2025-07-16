@@ -86,6 +86,7 @@ const Dashboard = () => {
 
   const getSystemStatus = () => {
     if (!isConnected) return { text: "Offline", variant: "destructive" };
+    if (bins.length === 0) return { text: "No Data", variant: "outline" };
     const maxLevel = Math.max(...bins.map(bin => bin.level));
     if (maxLevel >= 90) return { text: "Alert", variant: "destructive" };
     if (maxLevel >= 75) return { text: "Warning", variant: "secondary" };
@@ -94,7 +95,7 @@ const Dashboard = () => {
 
   const getOverallStats = () => {
     const totalBins = bins.length;
-    const avgLevel = bins.reduce((sum, bin) => sum + bin.level, 0) / totalBins;
+    const avgLevel = totalBins > 0 ? bins.reduce((sum, bin) => sum + bin.level, 0) / totalBins : 0;
     const fullBins = bins.filter(bin => bin.level >= 90).length;
     const nearlyFullBins = bins.filter(bin => bin.level >= 75 && bin.level < 90).length;
     
